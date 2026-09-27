@@ -17,6 +17,28 @@ npm run dev
 | `npm run verify` | сверка расчётного ядра с независимыми формулами |
 | `npm run sweph:assets` | перекопировать ассеты Swiss Ephemeris вручную |
 
+## Публикация
+
+Сайт статический — сервера нет: Swiss Ephemeris считает в браузере, город
+браузер ищет сам в Open-Meteo, хранить нечего. Поэтому он живёт на GitHub
+Pages: `https://polishtefan.github.io/astro/`.
+
+* `adapter-static` собирает готовые файлы в `build/`, страница пререндерится
+  (`src/routes/+layout.ts`).
+* На Pages сайт в подпапке `/astro`. Путь задаётся переменной `BASE_PATH` при
+  сборке; локально её нет, и дев-сервер работает из корня. Пути к движку и
+  эфемеридам идут через `base` из `$app/paths`, к шрифтам Vite сам делает
+  относительными.
+* Собирает и публикует GitHub Actions (`.github/workflows/deploy.yml`) при
+  каждом push в `main`: `npm ci` (postinstall кладёт эфемериды в `static/`),
+  `npm run check`, `npm run verify`, сборка. Если сверка расчётов не
+  сошлась — сайт не публикуется.
+* Один раз в настройках репозитория: Settings → Pages → Source: «GitHub
+  Actions».
+
+Проверить сборку с подпапкой локально: `BASE_PATH=/astro npm run build` и
+раздать `build/` по адресу `/astro/`.
+
 ## Ключевая механика
 
 Карта — чистая функция от `(данные рождения, дата наблюдения)`.

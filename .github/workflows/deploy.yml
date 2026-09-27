@@ -1,0 +1,65 @@
+# Сборка и публикация сайта на GitHub Pages при каждом push в main.
+#
+# Собирать сайт должен GitHub, а не мы вручную: эфемериды и swisseph.wasm в
+# git не хранятся — их кладёт в static/ скрипт postinstall при `npm ci`.
+#
+# В настройках репозитория: Settings → Pages → Source: «GitHub Actions».
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # кнопка «Run workflow» — пересобрать вручную без нового коммита
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# одна публикация за раз; уже начатую не обрываем
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # 24 — как локально; verify-ephemeris.mjs импортирует .ts напрямую,
+          # это умеет только свежий Node
+          node-version: 24
+          cache: npm
+
+      # postinstall копирует swisseph.wasm и эфемериды в static/
+      - run: npm ci
+
+      - run: npm run check
+
+      # сверка расчётов с независимыми формулами: если что-то разошлось,
+      # сайт не публикуется
+      - run: npm run verify
+
+      # сайт живёт в подпапке с именем репозитория: /astro
+      - run: npm run build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,4 +1,4 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
@@ -11,10 +11,22 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
-			// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
-			// See https://svelte.dev/docs/kit/adapters for more information about adapters.
-			adapter: adapter()
+			/*
+			 * Сайт целиком статический: Swiss Ephemeris считает в браузере, город
+			 * браузер ищет сам, хранить нечего. Поэтому сборка — набор готовых
+			 * файлов в build/, которые раздаёт GitHub Pages, без своего сервера.
+			 */
+			adapter: adapter(),
+
+			/*
+			 * На GitHub Pages сайт живёт в подпапке: polishtefan.github.io/astro.
+			 * Путь приходит из переменной окружения, которую ставит сборка на
+			 * GitHub (.github/workflows/deploy.yml). Локально её нет — дев-сервер
+			 * и `npm run preview` работают из корня, как раньше.
+			 */
+			paths: {
+				base: (process.env.BASE_PATH ?? '') as '' | `/${string}`
+			}
 		})
 	]
 });
