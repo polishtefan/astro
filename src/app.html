@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="text-scale" content="scale" />
+		<title>Natal</title>
+		<script>
+			// Ставим тему до первой отрисовки, иначе на светлой теме мелькнёт чёрный фон.
+			// Синхронно и без зависимостей — этот скрипт блокирует парсинг на доли миллисекунды.
+			(() => {
+				let theme = 'dark';
+				let palette = 'mono';
+				try {
+					const saved = JSON.parse(localStorage.getItem('astro:appearance') || '{}');
+					if (saved.theme === 'light' || saved.theme === 'dark') theme = saved.theme;
+					if (saved.palette === 'mono' || saved.palette === 'elements') palette = saved.palette;
+				} catch {}
+				document.documentElement.dataset.theme = theme;
+				document.documentElement.dataset.palette = palette;
+			})();
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>

@@ -1,0 +1,217 @@
+/*
+ * Шрифты проекта лежат в static/fonts и подключаются отсюда, а не с чужого CDN:
+ * так они работают офлайн (пригодится для PWA) и не сообщают Google о
+ * посетителях. Оба под лицензией SIL Open Font License — см. static/fonts/README.md.
+ *
+ * Space Grotesk — имя и крупные даты, Space Mono — весь остальной интерфейс.
+ * Родственные шрифты одного автора: разное настроение, общее происхождение.
+ * Нужен только вес 400; кириллицы у них нет, интерфейс английский.
+ */
+/* Space Grotesk, latin-ext */
+@font-face {
+	font-family: 'Space Grotesk';
+	font-style: normal;
+	font-weight: 400;
+	/* swap: пока шрифт едет, текст виден системным — страница не мигает пустотой */
+	font-display: swap;
+	src: url('/fonts/space-grotesk-400-latin-ext.woff2') format('woff2');
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* Space Grotesk, latin */
+@font-face {
+	font-family: 'Space Grotesk';
+	font-style: normal;
+	font-weight: 400;
+	/* swap: пока шрифт едет, текст виден системным — страница не мигает пустотой */
+	font-display: swap;
+	src: url('/fonts/space-grotesk-400-latin.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Space Mono, latin-ext */
+@font-face {
+	font-family: 'Space Mono';
+	font-style: normal;
+	font-weight: 400;
+	/* swap: пока шрифт едет, текст виден системным — страница не мигает пустотой */
+	font-display: swap;
+	src: url('/fonts/space-mono-400-latin-ext.woff2') format('woff2');
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* Space Mono, latin */
+@font-face {
+	font-family: 'Space Mono';
+	font-style: normal;
+	font-weight: 400;
+	/* swap: пока шрифт едет, текст виден системным — страница не мигает пустотой */
+	font-display: swap;
+	src: url('/fonts/space-mono-400-latin.woff2') format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
+ * Токены оформления.
+ *
+ * Две независимые оси:
+ *   data-theme   = dark | light     — фон и чернила
+ *   data-palette = mono | elements  — цвет знаков и значков аспектов
+ *
+ * Всё, что рисует колесо, ходит только через эти переменные, поэтому смена
+ * темы не требует ни одной правки в компонентах.
+ */
+
+:root,
+:root[data-theme='dark'] {
+	/*
+	 * Ни чистого чёрного, ни чистого белого: фон — тёмно-серый графит, чернила —
+	 * приглушённое серебро. Контраст мягче, ближе к плёнке, чем к экрану.
+	 */
+	--bg: #17181a;
+	--ink: #d9d9d5;
+	--ink-dim: rgba(217, 217, 213, 0.58);
+	--ink-faint: rgba(217, 217, 213, 0.26);
+	--ink-ghost: rgba(217, 217, 213, 0.12);
+	--hard: rgba(217, 217, 213, 0.32); /* напряжённые аспекты */
+	--soft: rgba(217, 217, 213, 0.2); /* гармоничные аспекты */
+	--hover: rgba(217, 217, 213, 0.06);
+	/*
+	 * Сила зерна. На тёмном его нужно больше: на графите шум съедается, на
+	 * светлой бумаге тот же процент уже сорит по тонким линиям колеса.
+	 * Крутится одним числом — здесь и в светлой теме ниже.
+	 */
+	--grain: 0.09;
+
+	/*
+	 * Стихии. Тон традиционный — огонь красный, земля зелёная, воздух жёлтый,
+	 * вода синяя, — а насыщенность у всех одна (~30%) и светлота одна (~56%).
+	 * Раньше она гуляла от 34 до 73%, и цвета выпрыгивали вперёд поодиночке:
+	 * на графите с зерном высокая насыщенность читается как неон.
+	 */
+	--el-fire: #b77d6c;
+	--el-earth: #65a467;
+	--el-air: #b7a36c;
+	--el-water: #7094b2;
+
+	/* цвет аспектов по типу: напряжённые, трины, секстили */
+	--aspect-hard: #b57369;
+	--aspect-trine: #65a46d;
+	--aspect-sextile: #6d96b0;
+}
+
+:root[data-theme='light'] {
+	/*
+	 * Не белый лист, а серая бумага; чернила — мягкий уголь, не чёрный.
+	 * Холодный оттенок сохраняем, но уводим от бумажной белизны в серость.
+	 */
+	--bg: #e8e9e6;
+	--ink: #2b2d2e;
+	--ink-dim: rgba(43, 45, 46, 0.62);
+	--ink-faint: rgba(43, 45, 46, 0.3);
+	--ink-ghost: rgba(43, 45, 46, 0.15);
+	--hard: rgba(43, 45, 46, 0.4);
+	--soft: rgba(43, 45, 46, 0.26);
+	--hover: rgba(43, 45, 46, 0.05);
+	--grain: 0.07;
+
+	/* те же тона и та же насыщенность, но светлота ниже — иначе цвет тонет в фоне */
+	--el-fire: #925745;
+	--el-earth: #3e6f40;
+	--el-air: #7f6c39;
+	--el-water: #456887;
+
+	--aspect-hard: #924f45;
+	--aspect-trine: #3e6f45;
+	--aspect-sextile: #456d87;
+}
+
+/*
+ * Монохром — состояние по умолчанию: знаки берут обычный приглушённый цвет
+ * чернил. Цветная палитра лишь переопределяет эти четыре переменные.
+ */
+:root {
+	--sign-fire: var(--ink-dim);
+	--sign-earth: var(--ink-dim);
+	--sign-air: var(--ink-dim);
+	--sign-water: var(--ink-dim);
+}
+
+:root[data-palette='elements'] {
+	--sign-fire: var(--el-fire);
+	--sign-earth: var(--el-earth);
+	--sign-air: var(--el-air);
+	--sign-water: var(--el-water);
+}
+
+:root {
+	/* крупный текст: имя, даты, числа */
+	--serif: 'Space Grotesk', ui-sans-serif, sans-serif;
+	/* интерфейс: подписи, время, таблицы */
+	--grot: 'Space Mono', ui-monospace, monospace;
+	--glyph: 'Apple Symbols', 'Segoe UI Symbol', 'Noto Sans Symbols2', 'Noto Sans Symbols',
+		var(--serif);
+}
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--grot);
+	-webkit-font-smoothing: antialiased;
+}
+
+html {
+	transition:
+		background-color 0.35s ease,
+		color 0.35s ease;
+}
+
+body {
+	min-height: 100vh;
+}
+
+/*
+ * Плёночное зерно поверх всей страницы.
+ *
+ * Шум генерирует сам браузер фильтром feTurbulence во встроенной SVG-картинке:
+ * никакого файла с текстурой, вес — пара сотен байт. Плитка 180×180 повторяется,
+ * stitchTiles сшивает края, чтобы не было видно сетки повторов.
+ *
+ * Слой закреплён относительно окна и не прокручивается — зерно «лежит на
+ * стекле», как на плёнке, а не ездит вместе с содержимым. pointer-events: none,
+ * чтобы он не перехватывал клики.
+ */
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 9;
+	pointer-events: none;
+	opacity: var(--grain);
+	/* overlay осветляет тёмные места и затемняет светлые — работает в обеих темах */
+	mix-blend-mode: overlay;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+	background-size: 180px 180px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		transition: none;
+	}
+}
+
+button,
+input,
+select {
+	font-family: inherit;
+	color: inherit;
+}
+
+:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}

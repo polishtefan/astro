@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Natal Wheel — прототип</title>
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --ink:#ece7de;          /* тёплый off-white, как у co-star */
+    --ink-dim:rgba(236,231,222,.55);
+    --ink-faint:rgba(236,231,222,.22);
+    --ink-ghost:rgba(236,231,222,.10);
+    --hard:rgba(236,231,222,.30);   /* напряжённые аспекты */
+    --soft:rgba(236,231,222,.18);   /* гармоничные аспекты */
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --grot:ui-sans-serif,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --glyph:"Apple Symbols","Segoe UI Symbol","Noto Sans Symbols2","Noto Sans Symbols",var(--serif);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--grot);-webkit-font-smoothing:antialiased}
+  body{min-height:100vh;display:flex;justify-content:center;padding:32px 20px 64px}
+
+  .app{width:100%;max-width:1040px;display:grid;grid-template-columns:1fr;gap:36px}
+  @media(min-width:900px){ .app{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);align-items:start;gap:56px} }
+
+  /* ── header ── */
+  .eyebrow{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--ink-dim)}
+  .who{font-family:var(--serif);font-size:clamp(30px,5vw,46px);line-height:1.02;font-weight:400;margin:14px 0 10px;letter-spacing:-.01em}
+  .who em{font-style:italic;color:var(--ink-dim)}
+  .meta{font-size:12px;letter-spacing:.12em;color:var(--ink-dim);text-transform:uppercase}
+  .rule{height:1px;background:var(--ink-faint);margin:26px 0}
+
+  /* ── wheel ── */
+  .stage{position:relative;width:100%}
+  svg{width:100%;height:auto;display:block;overflow:visible}
+  .spin{transform-origin:320px 320px;transition:transform .9s cubic-bezier(.22,.61,.36,1)}
+  text{font-family:var(--grot)}
+  .sign{font-family:var(--glyph);font-size:19px;fill:var(--ink-dim)}
+  .pl{font-family:var(--glyph);font-size:20px;fill:var(--ink)}
+  .pl.transit{fill:var(--ink);opacity:.92}
+  .deg{font-size:8.5px;fill:var(--ink-dim);letter-spacing:.04em}
+  .hn{font-size:9px;fill:var(--ink-faint);letter-spacing:.05em}
+  .cardinal{font-size:9.5px;letter-spacing:.28em;fill:var(--ink-dim)}
+
+  /* ── side panel ── */
+  .panel{padding-top:4px}
+  .toggle{display:inline-flex;border:1px solid var(--ink-faint);border-radius:999px;padding:3px;margin-bottom:26px}
+  .toggle button{appearance:none;background:none;border:0;color:var(--ink-dim);font-family:var(--grot);
+    font-size:11px;letter-spacing:.2em;text-transform:uppercase;padding:9px 20px;border-radius:999px;cursor:pointer;transition:.25s}
+  .toggle button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+  .toggle button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  .scrub{overflow:hidden;max-height:0;opacity:0;transition:max-height .45s ease,opacity .35s ease}
+  .scrub.open{max-height:180px;opacity:1}
+  .scrub-date{font-family:var(--serif);font-size:26px;letter-spacing:.02em;margin-bottom:4px}
+  .scrub-sub{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:18px}
+  input[type=range]{-webkit-appearance:none;width:100%;height:1px;background:var(--ink-faint);margin:6px 0 8px}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ink);cursor:pointer;margin-top:-1px}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--ink);cursor:pointer}
+  .scrub-ends{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.1em;color:var(--ink-faint);text-transform:uppercase}
+  .today{appearance:none;background:none;border:0;color:var(--ink-dim);font-family:var(--grot);font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;margin-top:14px;border-bottom:1px solid var(--ink-faint);padding-bottom:2px}
+  .today:hover{color:var(--ink)}
+
+  .list{margin-top:30px;width:100%;border-collapse:collapse}
+  .list th{text-align:left;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);font-weight:400;padding:0 0 12px}
+  .list td{padding:9px 0;border-top:1px solid var(--ink-ghost);font-size:13px;vertical-align:middle}
+  .list .g{font-family:var(--glyph);font-size:16px;width:26px}
+  .list .nm{color:var(--ink-dim);letter-spacing:.02em}
+  .list .pos{font-family:var(--serif);font-size:15px;text-align:right}
+  .list .pos small{color:var(--ink-dim);font-family:var(--grot);font-size:11px;letter-spacing:.05em}
+  .list tr.t-col td{color:var(--ink)}
+  .t-head{opacity:0;transition:opacity .3s}
+  .t-head.show{opacity:1}
+
+  .foot{font-size:11px;line-height:1.6;color:var(--ink-faint);margin-top:34px;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- LEFT: chart -->
+  <div>
+    <div class="eyebrow">Natal chart</div>
+    <h1 class="who">Sample — <em>Poli</em></h1>
+    <div class="meta" id="ctx">Placidus · Libra rising · demo data</div>
+    <div class="rule"></div>
+    <div class="stage">
+      <svg viewBox="0 0 640 640" role="img" aria-label="Колесо натальной карты">
+        <g id="spin" class="spin">
+          <g id="rings"></g>
+          <g id="houses"></g>
+          <g id="signs"></g>
+          <g id="ticks"></g>
+          <g id="aspects"></g>
+          <g id="natal"></g>
+          <g id="transit"></g>
+        </g>
+        <g id="cardinals"></g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- RIGHT: controls -->
+  <div class="panel">
+    <div class="toggle" role="group" aria-label="Слой карты">
+      <button id="bNatal"   aria-pressed="true">Natal</button>
+      <button id="bTransit" aria-pressed="false">Transits</button>
+    </div>
+
+    <div class="scrub" id="scrub">
+      <div class="scrub-date" id="tDate">—</div>
+      <div class="scrub-sub">transiting positions</div>
+      <input type="range" id="slider" min="-180" max="180" value="0" step="1" aria-label="Сдвиг даты в днях">
+      <div class="scrub-ends"><span>−6 мес</span><span>сегодня</span><span>+6 мес</span></div>
+      <button class="today" id="reset">↺ вернуть к сегодня</button>
+    </div>
+
+    <table class="list">
+      <thead>
+        <tr>
+          <th>Planet</th>
+          <th style="text-align:right">Natal</th>
+          <th style="text-align:right" class="t-head" id="thT">Transit</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+
+    <p class="foot">
+      Прототип стилистики и взаимодействия. Позиции — примерные (натал зашит как демо,
+      транзиты движутся по усреднённой суточной скорости от «сегодня»). В боевой версии
+      всё считается через Swiss Ephemeris — точные долготы, дома, ретроградность.
+    </p>
+  </div>
+</div>
+
+<script>
+const CX=320, CY=320;
+const R_SIGN_OUT=300, R_SIGN_IN=258, R_SIGN_MID=279;
+const R_TICK=258, R_TICK_IN=250;
+const R_NATAL=206, R_TRANSIT=238;
+const R_ASPECT=176, R_HOUSE_LINE=258, R_HN=150;
+
+// ── demo data ─────────────────────────────────────────
+const ASC = 190;            // Libra 10° rising
+const SIGNS = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
+const SIGN_NAMES=["Ari","Tau","Gem","Can","Leo","Vir","Lib","Sco","Sag","Cap","Aqu","Pis"];
+
+// natal: glyph, name, longitude
+const NATAL=[
+  ["☉","Sun",128],["☽","Moon",46],["☿","Mercury",112],["♀","Venus",158],
+  ["♂","Mars",275],["♃","Jupiter",68],["♄","Saturn",348],["♅","Uranus",55],
+  ["♆","Neptune",356],["♇","Pluto",298],["☊","Node",25]
+];
+// transit base @ "today" + mean daily motion (deg/day)
+const TR_BASE=[
+  ["☉","Sun",153,0.9856],["☽","Moon",200,13.176],["☿","Mercury",145,1.20],
+  ["♀","Venus",130,1.20],["♂","Mars",190,0.524],["♃","Jupiter",100,0.083],
+  ["♄","Saturn",356,0.0335],["♅","Uranus",62,0.0117],["♆","Neptune",358,0.006],
+  ["♇","Pluto",301,0.004]
+];
+const TODAY=new Date(2026,7,26);
+
+// ── helpers ───────────────────────────────────────────
+const norm=d=>((d%360)+360)%360;
+const rad=d=>d*Math.PI/180;
+// zodiac longitude -> screen point (ASC left, longitude increases counter-clockwise)
+function pt(lon,r){const a=rad(180-(lon-ASC));return[CX+r*Math.cos(a),CY+r*Math.sin(a)];}
+function fmt(lon){const l=norm(lon),s=Math.floor(l/30),d=Math.floor(l%30),m=Math.floor((l%1)*60);
+  return {sign:SIGN_NAMES[s],glyph:SIGNS[s],deg:d,min:m,txt:`${d}°`,sub:SIGN_NAMES[s]};}
+function el(tag,attrs,txt){const e=document.createElementNS("http://www.w3.org/2000/svg",tag);
+  for(const k in attrs)e.setAttribute(k,attrs[k]); if(txt!=null)e.textContent=txt; return e;}
+
+// spread overlapping glyphs on a ring (min angular gap)
+function spread(items){ // items:[{lon,...}]
+  const gap=8, s=[...items].map((o,i)=>({...o,i,plot:o.lon})).sort((a,b)=>a.lon-b.lon);
+  for(let pass=0;pass<40;pass++){let moved=false;
+    for(let k=0;k<s.length;k++){const a=s[k],b=s[(k+1)%s.length];
+      let d=norm(b.plot-a.plot); if(d<gap){const push=(gap-d)/2; a.plot=norm(a.plot-push); b.plot=norm(b.plot+push); moved=true;}}
+    if(!moved)break;}
+  const out={}; s.forEach(o=>out[o.i]=o.plot); return items.map((o,i)=>out[i]);
+}
+
+// ── static rings / signs / houses / ticks ─────────────
+function drawStatic(){
+  const g=document.getElementById("rings");
+  [R_SIGN_OUT,R_SIGN_IN,R_ASPECT].forEach((r,i)=>
+    g.appendChild(el("circle",{cx:CX,cy:CY,r,fill:"none",stroke:"var(--ink-faint)","stroke-width":i===2?0.6:1})));
+  // sign divisions
+  for(let i=0;i<12;i++){const[x1,y1]=pt(i*30,R_SIGN_IN),[x2,y2]=pt(i*30,R_SIGN_OUT);
+    g.appendChild(el("line",{x1,y1,x2,y2,stroke:"var(--ink-faint)","stroke-width":1}));
+    const[gx,gy]=pt(i*30+15,R_SIGN_MID);
+    const t=el("text",{x:gx,y:gy,"text-anchor":"middle","dominant-baseline":"central",class:"sign"},SIGNS[i]);
+    document.getElementById("signs").appendChild(t);
+  }
+  // 1° ticks
+  const tk=document.getElementById("ticks");
+  for(let d=0;d<360;d++){const long=d, big=d%30===0, r2=big?R_TICK-10:(d%5===0?R_TICK-6:R_TICK-3);
+    const[x1,y1]=pt(long,R_TICK),[x2,y2]=pt(long,r2);
+    tk.appendChild(el("line",{x1,y1,x2,y2,stroke:"var(--ink-faint)","stroke-width":big?0.9:0.5,opacity:big?0.9:0.5}));}
+  // equal-house cusps + numbers (demo)
+  const hg=document.getElementById("houses");
+  for(let h=0;h<12;h++){const cusp=norm(ASC+h*30);
+    const[x1,y1]=pt(cusp,R_ASPECT),[x2,y2]=pt(cusp,R_HOUSE_LINE);
+    const emph=(h%3===0); // angles
+    hg.appendChild(el("line",{x1,y1,x2,y2,stroke:emph?"var(--ink-faint)":"var(--ink-ghost)","stroke-width":emph?1:0.7}));
+    const[hx,hy]=pt(norm(cusp+15),R_HN);
+    hg.appendChild(el("text",{x:hx,y:hy,"text-anchor":"middle","dominant-baseline":"central",class:"hn"},h+1));
+  }
+  // cardinal labels (fixed to screen, not the spin group)
+  const cg=document.getElementById("cardinals");
+  [["ASC",180,-14,4],["DSC",0,14,4],["IC",90,0,20],["MC",270,0,-12]].forEach(([lab,scr,dx,dy])=>{
+    const a=rad(scr),r=314,x=CX+r*Math.cos(a)+dx,y=CY+r*Math.sin(a)+dy;
+    cg.appendChild(el("text",{x,y,"text-anchor":"middle",class:"cardinal"},lab));
+  });
+}
+
+// ── planet layer ──────────────────────────────────────
+function drawPlanets(id,data,r,cls,plots){
+  const g=document.getElementById(id); g.innerHTML="";
+  data.forEach((p,i)=>{
+    const trueLon=p.lon, plot=plots[i];
+    // pointer from true degree to plotted glyph
+    const[tx,ty]=pt(trueLon, r+ (id==="transit"?12:-12));
+    const[bx,by]=pt(plot, r);
+    g.appendChild(el("line",{x1:tx,y1:ty,x2:bx,y2:by,stroke:"var(--ink-faint)","stroke-width":0.6}));
+    g.appendChild(el("circle",{cx:tx,cy:ty,r:1.4,fill:"var(--ink-dim)"}));
+    const[gx,gy]=pt(plot,r);
+    g.appendChild(el("text",{x:gx,y:gy,"text-anchor":"middle","dominant-baseline":"central",class:cls},p.glyph));
+    // tiny degree under glyph
+    const[dx,dy]=pt(plot, r-(id==="transit"?15:15));
+    g.appendChild(el("text",{x:dx,y:dy,"text-anchor":"middle","dominant-baseline":"central",class:"deg"},fmt(trueLon).txt));
+  });
+}
+
+// ── aspects ───────────────────────────────────────────
+const ASPECTS=[[0,7],[60,4],[90,6],[120,6],[180,7]]; // angle,orb
+function drawAspects(A,B){ // arrays of {glyph,lon}
+  const g=document.getElementById("aspects"); g.innerHTML="";
+  for(let i=0;i<A.length;i++)for(let j=(A===B?i+1:0);j<B.length;j++){
+    let diff=Math.abs(norm(A[i].lon-B[j].lon)); if(diff>180)diff=360-diff;
+    for(const[ang,orb]of ASPECTS){ if(Math.abs(diff-ang)<=orb){
+      if(ang===0)break; // conjunction: skip line
+      const hard=(ang===90||ang===180);
+      const[x1,y1]=pt(A[i].lon,R_ASPECT),[x2,y2]=pt(B[j].lon,R_ASPECT);
+      g.appendChild(el("line",{x1,y1,x2,y2,stroke:hard?"var(--hard)":"var(--soft)",
+        "stroke-width":hard?0.8:0.7,"stroke-dasharray":hard?"3 4":"0"}));
+      break;
+    }}
+  }
+}
+
+// ── table ─────────────────────────────────────────────
+function drawTable(showT,tr){
+  const tb=document.getElementById("tbody"); tb.innerHTML="";
+  NATAL.filter(p=>p[1]!=="Node").forEach(([g,nm,lon])=>{
+    const n=fmt(lon); const row=el("tr",{});
+    row.appendChild(el2("td",{class:"g glyph"},g,true));
+    row.appendChild(el2("td",{class:"nm"},nm));
+    const pos=el2("td",{class:"pos"}); pos.innerHTML=`${n.deg}° <small>${n.sub}</small>`; row.appendChild(pos);
+    if(showT){const t=tr.find(x=>x.glyph===g); const tn=fmt(t.lon);
+      const tp=el2("td",{class:"pos"}); tp.innerHTML=`${tn.deg}° <small>${tn.sub}</small>`; row.appendChild(tp); row.classList.add("t-col");}
+    tb.appendChild(row);
+  });
+}
+function el2(tag,attrs,txt,glyph){const e=document.createElement(tag);for(const k in attrs)e.className=attrs.class||"";
+  if(txt!=null)e.textContent=txt; if(glyph)e.style.fontFamily="var(--glyph)"; return e;}
+
+// ── state / render ────────────────────────────────────
+let showTransits=false, dayOffset=0;
+const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function transitNow(){
+  return TR_BASE.map(([glyph,name,base,spd])=>({glyph,name,lon:norm(base+dayOffset*spd)}));
+}
+function render(){
+  const natalObj=NATAL.map(([glyph,name,lon])=>({glyph,name,lon}));
+  const nPlots=spread(natalObj);
+  drawPlanets("natal",natalObj,R_NATAL,"pl",nPlots);
+
+  if(showTransits){
+    const tr=transitNow(); const tPlots=spread(tr);
+    drawPlanets("transit",tr.map(o=>({...o})),R_TRANSIT,"pl transit",tPlots);
+    drawAspects(tr,natalObj); // transit → natal aspects (the real use case)
+    drawTable(true,tr);
+  }else{
+    document.getElementById("transit").innerHTML="";
+    drawAspects(natalObj.filter(p=>p.name!=="Node"),natalObj.filter(p=>p.name!=="Node"));
+    drawTable(false,null);
+  }
+  // ambient: slight rotation offset just to feel alive on toggle
+  if(!reduce){document.getElementById("spin").style.transform=showTransits?"rotate(-4deg)":"rotate(0deg)";}
+}
+
+function setDate(){
+  const d=new Date(TODAY); d.setDate(d.getDate()+dayOffset);
+  const M=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  document.getElementById("tDate").textContent=`${String(d.getDate()).padStart(2,"0")} ${M[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ── wiring ────────────────────────────────────────────
+const bN=document.getElementById("bNatal"),bT=document.getElementById("bTransit"),
+      scrub=document.getElementById("scrub"),thT=document.getElementById("thT"),slider=document.getElementById("slider");
+function mode(t){showTransits=t;
+  bN.setAttribute("aria-pressed",!t); bT.setAttribute("aria-pressed",t);
+  scrub.classList.toggle("open",t); thT.classList.toggle("show",t);
+  document.getElementById("ctx").textContent=t?"Bi-wheel · natal + transiting · demo data":"Placidus · Libra rising · demo data";
+  render();
+}
+bN.onclick=()=>mode(false);
+bT.onclick=()=>mode(true);
+slider.oninput=e=>{dayOffset=+e.target.value; setDate(); if(showTransits)render();};
+document.getElementById("reset").onclick=()=>{dayOffset=0;slider.value=0;setDate();render();};
+
+drawStatic(); setDate(); render();
+</script>
+</body>
+</html>
